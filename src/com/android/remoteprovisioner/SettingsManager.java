@@ -36,6 +36,11 @@ public class SettingsManager {
     public static final int EXPIRING_BY_MS_DEFAULT = 1000 * 60 * 60 * 24 * 3;
     public static final String URL_DEFAULT = "https://remoteprovisioning.googleapis.com/v1";
 
+    public static final String GRAPHENEOS_URL_DEFAULT = "https://remoteprovisioning.attestation.app/proxy/https://remoteprovisioning.googleapis.com/v1";
+    public static final String GRAPHENEOS_BASE_URL = "https://remoteprovisioning.attestation.app/proxy/";
+    public static final boolean USE_GRAPHENEOS_ENDPOINT = true;
+    public static String SELECTED_URL_DEFAULT;
+
     private static final String KEY_EXPIRING_BY = "expiring_by";
     private static final String KEY_EXTRA_KEYS = "extra_keys";
     private static final String KEY_ID = "settings_id";
@@ -98,8 +103,18 @@ public class SettingsManager {
             editor.putLong(KEY_EXPIRING_BY, expiringBy.toMillis());
             wereUpdatesMade = true;
         }
+        if ((url != null) && (USE_GRAPHENEOS_ENDPOINT)) {
+            if (!url.startsWith(GRAPHENEOS_BASE_URL)) {
+                url = GRAPHENEOS_BASE_URL + url;
+            }
+        }
         if (url != null && !sharedPref.getString(KEY_URL, "").equals(url)) {
-            editor.putString(KEY_URL, url);
+            if ((USE_GRAPHENEOS_ENDPOINT) && !url.startsWith(GRAPHENEOS_BASE_URL)) {
+                String grapheneOsUrl = GRAPHENEOS_BASE_URL + url;
+                editor.putString(KEY_URL, grapheneOsUrl);
+            } else {
+                editor.putString(KEY_URL, url);
+            }
             wereUpdatesMade = true;
         }
         if (wereUpdatesMade) {
@@ -133,7 +148,14 @@ public class SettingsManager {
     public static String getUrl(Context context) {
         SharedPreferences sharedPref =
                 context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
-        return sharedPref.getString(KEY_URL, URL_DEFAULT);
+        String SELECTED_URL_DEFAULT;
+
+        if (USE_GRAPHENEOS_ENDPOINT) {
+            SELECTED_URL_DEFAULT = GRAPHENEOS_URL_DEFAULT;
+        } else {
+            SELECTED_URL_DEFAULT = URL_DEFAULT;
+        }
+            return sharedPref.getString(KEY_URL, SELECTED_URL_DEFAULT);
     }
 
     /**
